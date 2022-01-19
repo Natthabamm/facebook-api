@@ -9,7 +9,7 @@ const util = require('util');
 //     .catch(err => {});
 
 exports.updateProfileImg = (req, res, next) => {
-        // console.log(req.file);
+        console.log(req.file);
     cloudinary.uploader.upload(req.file.path, async (err, result) => {
         if (err) return next(err)
 
@@ -24,6 +24,18 @@ exports.updateProfileImg = (req, res, next) => {
         }
 
         fs.unlinkSync(req.file.path)
-        res.json({ message: 'Upload profile image completed' })
+        res.json({ 
+            message: 'Upload profile image completed',
+            profileImg: result.secure_url
+        })
     });
 };
+
+exports.getMe = (req, res, next) => {
+    const { id, firstName, lastName, profileImg, email, phoneNumber } = req.user;
+    res 
+        .status(200)
+        .json({
+            user: { id, firstName, lastName, profileImg, email, phoneNumber }
+        });
+}

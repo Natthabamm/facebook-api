@@ -76,10 +76,19 @@ exports.login = async (req, res, next) => {
                 .json({ message: 'invalid email or phone number or password' });
         }
 
-        const payload = { id: user.id, firstName: user.firstName, lastName: user.lastName }
+        const payload = { 
+            id: user.id, 
+            firstName: user.firstName, 
+            lastName: user.lastName
+        }
         const token = jwt.sign(payload, process.env.JWT_SECRET_KEY, { expiresIn: 60 * 60 * 24 * 30});
 
-        res.status(200).json({ token });
+        const { id, firstName, lastName, profileImg, email, phoneNumber } = user;
+
+        res.status(200).json({ 
+            token,
+            user: { id, firstName, lastName, profileImg, email, phoneNumber } 
+        });
     } catch(err) {
         next(err)
     }
