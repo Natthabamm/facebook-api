@@ -18,14 +18,14 @@ module.exports = (sequelize, DataTypes) => {
             }
         });
 
-        Post.belongsTo(models.Comment, {
+        Post.hasMany(models.Comment, {
             foreignKey: {
                 name: 'postId',
                 allowNull: false
             }
         });
 
-        Post.belongsTo(models.Like, {
+        Post.hasMany(models.Like, {
             foreignKey: {
                 name: 'postId',
                 allowNull: false

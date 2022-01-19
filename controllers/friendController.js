@@ -8,10 +8,10 @@ exports.getAllFriends = async (req, res, next) => {
 
         if (status) where.status = status;
         //  WHERE (`requestToId` = req.user.id OR `requestFromId` = req.user.id AND `status` = 'ACCEPTED)
-        const friends = await Friend.FindAll({
+        const friends = await Friend.findAll({
             where: { 
                 ...where, 
-                [Or.or]: [{ requestToid: req.user.id }, { requestFromId: req.user.id }]
+                [Op.or]: [{ requestToid: req.user.id }, { requestFromId: req.user.id }]
             }
         });
 
@@ -41,26 +41,17 @@ exports.getAllFriends = async (req, res, next) => {
         }
 
         // SELECT * FROM user WHERE id IN (friends) AND (firstName LIKE '%userWhere% OR lastName Loke '%userWhere%')
-        const users = await User.FindAll({ 
+        const users = await User.findAll({ 
             where: { 
                 id: friendIds,
                 ...userWhere, 
-                [Op.or] : [
-                    {firstName: {
-                            [Op.substring]: searchName
-                        }
-                    },
-                    {lastName: {
-                            [Op.substring]: searchName
-                        }
-                    }
-                ]
+                
             },
             attributes: {
                 exclude: ['password']
             }
         });
-        res.status(20).json({ users });
+        res.status(200).json({ users });
     } catch (err) {
         next(err)
     }
@@ -127,4 +118,40 @@ exports.updateFriend = async (req, res, next) => {
     } catch (err) {
         next(err)
     }
+};
+
+exports.deleteFriend = async (req, res, next) => {
+    try {
+        const { friendId } = req.params;
+        const friend = await Friend.findOne({ where: { id: friendId } });
+
+        if (!friend) {
+            return res.status(400).json({ message: 'this friend requrest not found' });
+        }
+
+        if (
+            friend.requestFromId !== req.user.id &&
+            friend.requestToId !== req.user.id
+            ) {
+            return res
+                .status(400)
+                .json({ message: 'cannot delete this friend request' })
+        }
+
+        await Friend.destroy({ where: { id: friendId } });
+        res.status(204).json();
+    } catch (err) {
+        next(err)
+    }
 }
+
+// TEST 
+// exports.getTest = async (req, res, next) => {
+//     try {
+//         const result = await Friend.findOne({ where: { id: 6 } });
+//         console.log(result)
+//         res.status(200).json({ result });
+//     } catch (err) {
+//        next(err) 
+//     }
+// }

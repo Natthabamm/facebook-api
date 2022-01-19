@@ -58,13 +58,13 @@ module.exports = (sequelize, DataTypes) => {
             }
         });
 
-        // User.hasMany(models.Friend, {
-        //     as: 'RequestFrom',
-        //     foreignKey: {
-        //         name: 'requestToId',
-        //         allowNull: false
-        //     }
-        // });
+        User.hasMany(models.Friend, {
+            as: 'RequestTo',
+            foreignKey: {
+                name: 'requestToId',
+                allowNull: false
+            }
+        });
     };
 
     return User;
