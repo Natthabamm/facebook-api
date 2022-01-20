@@ -146,7 +146,8 @@ exports.updateFriend = async (req, res, next) => {
                 .json({ message: 'cannot accept this friend request' })
         }
 
-        await Friend.update({ status: 'ACCEPTED' }, { where: { id:  friendId } });
+        friend.status = 'ACCEPTED'
+        await friend.save();
         res.status(200).json({ message: 'friend request accepted' });
     } catch (err) {
         next(err)
@@ -169,21 +170,12 @@ exports.deleteFriend = async (req, res, next) => {
             return res.status(400).json({ message: 'this friend requrest not found' });
         }
 
-        if (
-            friend.requestFromId !== req.user.id &&
-            friend.requestToId !== req.user.id
-            ) {
-            return res
-                .status(403)
-                .json({ message: 'cannot delete this friend request' })
-        }
-
-        await Friend.destroy({ where: { id: friendId } });
+        await Friend.destroy();
         res.status(204).json();
     } catch (err) {
         next(err)
     }
-}
+};
 
 // TEST 
 // exports.getTest = async (req, res, next) => {
