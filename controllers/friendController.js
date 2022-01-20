@@ -1,6 +1,33 @@
 const { Op } = require('sequelize');
 const { Friend, User } = require('../models');
 
+exports.getUnknownn = async (req, res, next) => {
+    try {
+        const friends = await Friend.findAll({
+            where: { 
+                [Op.or]: [{ requestToid: req.user.id }, { requestFromId: req.user.id }]
+            }
+        });
+
+        const friendIds = friends.reduce((acc, item) => {
+            if (req.user.id === item.requestFromId) {
+                acc.push(item.requestToId);
+            } else {
+                acc.push(item.requestFromId);
+            }
+            return acc;
+        }, []);
+
+        const users = await User.findAll({ where: { 
+            id: {
+                [Op.notIn]: friendIds
+            } } })
+        res.status(200).json({ users });
+    } catch (err) {
+        next(err);
+    }
+}
+
 exports.getAllFriends = async (req, res, next) => {
     try {
         const { status, searchName } = req.query;
