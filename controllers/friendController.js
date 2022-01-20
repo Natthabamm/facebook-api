@@ -31,16 +31,22 @@ exports.getUnknownn = async (req, res, next) => {
 exports.getAllFriends = async (req, res, next) => {
     try {
         const { status, searchName } = req.query;
-        const where = { status };
+        const where = {[Op.or]: [{ requestToid: req.user.id }, { requestFromId: req.user.id }]};
+        if (status === 'ACCEPTED') {
+            where = {
+                status,
+                [Op.or]: [{ requestToid: req.user.id }, { requestFromId: req.user.id }]
+            }
+        } else if (status === 'REQUESTED') {
+            where = {
+                status,
+                requestToId: req.user.id
+            }
+        }
 
         if (status) where.status = status;
         //  WHERE (`requestToId` = req.user.id OR `requestFromId` = req.user.id AND `status` = 'ACCEPTED)
-        const friends = await Friend.findAll({
-            where: { 
-                ...where, 
-                [Op.or]: [{ requestToid: req.user.id }, { requestFromId: req.user.id }]
-            }
-        });
+        const friends = await Friend.findAll({ where });
 
         const friendIds = friends.reduce((acc, item) => {
             if (req.user.id === item.requestFromId) {

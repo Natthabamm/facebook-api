@@ -10,7 +10,8 @@ exports.getAllPost = async (req, res, next) => {
     try {
         const friends = await Friend.findAll({
             where: {  
-                [Op.or]: [{ requestToId: req.user.id }, { requestFromId: req.user.id }]
+                [Op.or]: [{ requestToId: req.user.id }, { requestFromId: req.user.id }],
+                status: 'ACCEPED'
             }
         });
 
