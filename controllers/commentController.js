@@ -1,5 +1,5 @@
 const { Op } = require('sequelize');
-const { Post, Comment, Friend } = require('../models')
+const { Post, Comment, Friend, User } = require('../models')
 
 exports.createComment = async (req, res, next) => {
     try {
@@ -35,11 +35,21 @@ exports.createComment = async (req, res, next) => {
             }
         };
 
-        const comment = await Comment.create({
+        const newComment = await Comment.create({
             title,
             postId,
             userId: req.user.id
         });
+
+        const comment = await Comment.findOne({ 
+            where: {
+                id: newComment.id
+            },
+            include :{
+                model: User,
+                attributes: ['id', 'firstName', 'lastName', 'profileImg']
+            }
+        })
 
         res.status(201).json({ comment });
     } catch (err) {

@@ -28,13 +28,13 @@ exports.getAllPost = async (req, res, next) => {
             include: [
                 {
                     model: User,
-                    attributes: ['id', 'firstName', 'lastName']
+                    attributes: ['id', 'firstName', 'lastName', 'profileImg']
                 },
                 {
                     model: Comment,
                     include: {
                         model: User,
-                        attributes: ['id', 'firstName', 'lastName']
+                        attributes: ['id', 'firstName', 'lastName', 'profileImg']
                     }
                 }
             ],
