@@ -156,7 +156,14 @@ exports.updateFriend = async (req, res, next) => {
 exports.deleteFriend = async (req, res, next) => {
     try {
         const { friendId } = req.params;
-        const friend = await Friend.findOne({ where: { id: friendId } });
+        const friend = await Friend.findOne({ 
+            where: { 
+                [Op.or]: [
+                    { requestToid: req.user.id, requestFromId: req.user.id }, 
+                    { requestToId: friendId, requestFromId: req.user.id }
+                ]
+            } 
+        });
 
         if (!friend) {
             return res.status(400).json({ message: 'this friend requrest not found' });
@@ -167,7 +174,7 @@ exports.deleteFriend = async (req, res, next) => {
             friend.requestToId !== req.user.id
             ) {
             return res
-                .status(400)
+                .status(403)
                 .json({ message: 'cannot delete this friend request' })
         }
 
