@@ -1,27 +1,33 @@
 const { Op } = require('sequelize');
 const { Friend, User } = require('../models');
 
-exports.getUnknownn = async (req, res, next) => {
+exports.getUnknown = async (req, res, next) => {
     try {
         const friends = await Friend.findAll({
             where: { 
-                [Op.or]: [{ requestToid: req.user.id }, { requestFromId: req.user.id }]
+                [Op.or]: [{ requestToId: req.user.id }, { requestFromId: req.user.id }]
             }
         });
 
-        const friendIds = friends.reduce((acc, item) => {
-            if (req.user.id === item.requestFromId) {
-                acc.push(item.requestToId);
-            } else {
-                acc.push(item.requestFromId);
-            }
-            return acc;
-        }, []);
+        const friendIds = friends.reduce(
+            (acc, item) => {
+                if (req.user.id === item.requestFromId) {
+                    acc.push(item.requestToId);
+                } else {
+                    acc.push(item.requestFromId);
+                }
+                return acc;
+            }, 
+            [req.user.id]
+        );
 
-        const users = await User.findAll({ where: { 
-            id: {
-                [Op.notIn]: friendIds
-            } } })
+        const users = await User.findAll({ 
+            where: { 
+                id: {
+                    [Op.notIn]: friendIds
+                } 
+            } 
+        });
         res.status(200).json({ users });
     } catch (err) {
         next(err);
@@ -31,20 +37,18 @@ exports.getUnknownn = async (req, res, next) => {
 exports.getAllFriends = async (req, res, next) => {
     try {
         const { status, searchName } = req.query;
-        const where = {[Op.or]: [{ requestToid: req.user.id }, { requestFromId: req.user.id }]};
+        let where = {
+            [Op.or]: [{ requestToId: req.user.id }, { requestFromId: req.user.id }]
+        };
         if (status === 'ACCEPTED') {
             where = {
                 status,
-                [Op.or]: [{ requestToid: req.user.id }, { requestFromId: req.user.id }]
+                [Op.or]: [{ requestToId: req.user.id }, { requestFromId: req.user.id }]
             }
         } else if (status === 'REQUESTED') {
-            where = {
-                status,
-                requestToId: req.user.id
-            }
+            where = { status, requestToId: req.user.id }
         }
 
-        if (status) where.status = status;
         //  WHERE (`requestToId` = req.user.id OR `requestFromId` = req.user.id AND `status` = 'ACCEPTED)
         const friends = await Friend.findAll({ where });
 
@@ -61,11 +65,13 @@ exports.getAllFriends = async (req, res, next) => {
         if (searchName) {
             userWhere = {
                 [Op.or] : [
-                    {firstName: {
+                    {
+                        firstName: {
                             [Op.substring]: searchName
                         }
                     },
-                    {lastName: {
+                    {
+                        lastName: {
                             [Op.substring]: searchName
                         }
                     }
@@ -97,7 +103,7 @@ exports.requestFriend = async (req, res, next) => {
         if (req.user.id === requestToId) {
             return res.status(400).json({ message: 'cannot request yourself' })
         }
-        //  WHERE `requestFromId` = req.user.id AND `requestToId` = requestToId OR (`requestFromId` = requestToId AND `requestToid` = req.user.id)
+        //  WHERE `requestFromId` = req.user.id AND `requestToId` = requestToId OR (`requestFromId` = requestToId AND `requestToId` = req.user.id)
         const existFriend = await Friend.findOne({ 
             where: {
                 [Op.or]: [
@@ -128,22 +134,21 @@ exports.requestFriend = async (req, res, next) => {
     } catch (err ){
         next(err)
     }
-}
+};
 
 exports.updateFriend = async (req, res, next) => {
     try {
         const { friendId } = req.params;
         const friend = await Friend.findOne({ 
-            where: { id: friendId, status: 'REQUESTED' } 
+            where: { 
+                requestToId: req.user.id,
+                requestFromId: friendId,
+                status: 'REQUESTED'
+            } 
         });
+
         if (!friend) {
             return res.status(400).json({ message: 'this friend request not found' });
-        }
-
-        if (friend.requestToId !== req.user.id) {
-            return res
-                .status(403)
-                .json({ message: 'cannot accept this friend request' })
         }
 
         friend.status = 'ACCEPTED'
@@ -160,7 +165,7 @@ exports.deleteFriend = async (req, res, next) => {
         const friend = await Friend.findOne({ 
             where: { 
                 [Op.or]: [
-                    { requestToid: req.user.id, requestFromId: req.user.id }, 
+                    { requestToId: req.user.id, requestFromId: req.user.id }, 
                     { requestToId: friendId, requestFromId: req.user.id }
                 ]
             } 
@@ -170,7 +175,7 @@ exports.deleteFriend = async (req, res, next) => {
             return res.status(400).json({ message: 'this friend requrest not found' });
         }
 
-        await Friend.destroy();
+        await friend.destroy();
         res.status(204).json();
     } catch (err) {
         next(err)
